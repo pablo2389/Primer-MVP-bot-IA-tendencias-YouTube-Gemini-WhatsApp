@@ -182,34 +182,16 @@ def oportunidad():
 
 
 
-# NUEVO WEBHOOK PARA TWILIO
-@app.post("/webhook")
+# NUEVO WEBHOOK PARA TWILIO@app.post("/webhook")
 async def webhook(request: Request):
-
-    form = await request.form()
-
-    mensaje = form.get("Body")
-
-    print("MENSAJE RECIBIDO:", mensaje)
-
 
     from twilio.twiml.messaging_response import MessagingResponse
 
+    response = MessagingResponse()
 
-    respuesta = f"""
-🤖 Bot conectado correctamente.
-
-Recibí:
-{mensaje}
-"""
-
-
-    twilio_response = MessagingResponse()
-
-    twilio_response.message(respuesta)
-
+    response.message("🤖 Hola! Tu bot WhatsApp funciona correctamente 🚀")
 
     return Response(
-        content=str(twilio_response),
+        content=str(response),
         media_type="text/xml"
     )
