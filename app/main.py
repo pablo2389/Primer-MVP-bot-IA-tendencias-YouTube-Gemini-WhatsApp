@@ -183,43 +183,25 @@ def oportunidad():
 
 
 # NUEVO WEBHOOK PARA TWILIO
-
 @app.post("/webhook")
 async def webhook(request: Request):
-
-    from twilio.twiml.messaging_response import MessagingResponse
 
     form = await request.form()
 
     mensaje = form.get("Body")
 
-
-    if not mensaje:
-
-        respuesta = "No recibí ningún tema."
-
-    else:
-
-        tema = mensaje.lower()
-
-        try:
-
-            videos = buscar_videos(
-                tema,
-                max_results=5
-            )
-
-            analisis = analizar_tendencias(videos)
-
-            respuesta = analisis[:1500]
+    print("MENSAJE RECIBIDO:", mensaje)
 
 
-        except Exception as e:
+    from twilio.twiml.messaging_response import MessagingResponse
 
-            print("ERROR WEBHOOK:", e)
 
-            respuesta = f"Error procesando solicitud: {str(e)}"
+    respuesta = f"""
+🤖 Bot conectado correctamente.
 
+Recibí:
+{mensaje}
+"""
 
 
     twilio_response = MessagingResponse()
@@ -229,5 +211,5 @@ async def webhook(request: Request):
 
     return Response(
         content=str(twilio_response),
-        media_type="application/xml"
+        media_type="text/xml"
     )
