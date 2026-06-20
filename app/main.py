@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import Response
+from twilio.twiml.messaging_response import MessagingResponse
 
 from app.whatsapp import enviar_mensaje
 from app.youtube import buscar_videos
@@ -108,8 +109,9 @@ async def webhook(Body: str = Form(default=""), From: str = Form(default="")):
         analisis = analizar_tendencias(videos)
         respuesta = analisis[:1500] if len(analisis) > 1500 else analisis
     except Exception as e:
+        print(f"❌ Error: {str(e)}")
         respuesta = f"❌ Error: {str(e)}"
 
-    resp_twiml = __import__("twilio.twiml.messaging_response", fromlist=["MessagingResponse"]).MessagingResponse()
+    resp_twiml = MessagingResponse()
     resp_twiml.message(respuesta)
     return Response(content=str(resp_twiml), media_type="text/xml")
