@@ -7,29 +7,20 @@ from google import genai
 load_dotenv()
 
 
-GEMINI_API_KEY = os.getenv(
-    "GEMINI_API_KEY"
-)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 
 if not GEMINI_API_KEY:
-    raise Exception(
-        "Falta GEMINI_API_KEY en el archivo .env"
-    )
+    raise Exception("Falta GEMINI_API_KEY en el archivo .env")
 
 
-client = genai.Client(
-    api_key=GEMINI_API_KEY
-)
-
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 
 def analizar_tendencias(videos):
 
-
     if not videos:
         return "No hay suficientes datos para analizar."
-
 
     datos = "\n".join(
         [
@@ -47,7 +38,6 @@ URL: {video.get('url', 'N/A')}
             for video in videos
         ]
     )
-
 
     prompt = f"""
 Eres un analista profesional de oportunidades de contenido
@@ -143,18 +133,42 @@ Reglas:
 - Prioriza oportunidades útiles para negocios reales.
 """
 
-
     try:
-
         respuesta = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt
         )
-
-
         return respuesta.text
 
+    except Exception as e:
+        return f"Error Gemini: {str(e)}"
+
+
+def respuesta_general(mensaje: str) -> str:
+    """Responde cualquier pregunta como asistente general de marketing y contenido."""
+
+    prompt = f"""
+Eres un asistente experto en marketing digital, contenido para redes sociales,
+SEO, inteligencia artificial aplicada a negocios, y estrategia de contenido
+para YouTube, TikTok e Instagram.
+
+El usuario te escribe desde WhatsApp. Respondé de forma:
+- Concisa y clara (máximo 300 palabras)
+- En español
+- Con emojis cuando ayuden a la lectura
+- Sin markdown complejo (no uses ** ni #, solo texto plano y emojis)
+- Directo al punto, sin rodeos
+
+Mensaje del usuario: {mensaje}
+"""
+
+    try:
+        respuesta = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        texto = respuesta.text
+        return texto[:1500] if len(texto) > 1500 else texto
 
     except Exception as e:
-
-        return f"Error Gemini: {str(e)}"
+        return f"❌ Error: {str(e)}"

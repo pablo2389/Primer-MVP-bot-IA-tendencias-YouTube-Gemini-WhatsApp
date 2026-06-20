@@ -6,6 +6,7 @@ from twilio.twiml.messaging_response import MessagingResponse
 from app.whatsapp import enviar_mensaje
 from app.youtube import buscar_videos
 from app.gemini import analizar_tendencias
+from app.comandos import procesar_mensaje
 
 
 app = FastAPI()
@@ -96,10 +97,7 @@ async def webhook(Body: str = Form(default=""), From: str = Form(default="")):
     async def procesar_y_enviar():
         await asyncio.sleep(0.1)
         try:
-            tema = mensaje if len(mensaje) > 3 else "inteligencia artificial"
-            videos = buscar_videos(tema)
-            analisis = analizar_tendencias(videos)
-            respuesta = analisis[:1500] if len(analisis) > 1500 else analisis
+            respuesta = procesar_mensaje(mensaje)
         except Exception as e:
             print(f"❌ Error: {str(e)}")
             respuesta = f"❌ Error: {str(e)}"
@@ -108,5 +106,5 @@ async def webhook(Body: str = Form(default=""), From: str = Form(default="")):
     asyncio.create_task(procesar_y_enviar())
 
     resp_twiml = MessagingResponse()
-    resp_twiml.message("⏳ Analizando tendencias, en segundos te respondo...")
+    resp_twiml.message("⏳ Procesando tu consulta...")
     return Response(content=str(resp_twiml), media_type="text/xml")
