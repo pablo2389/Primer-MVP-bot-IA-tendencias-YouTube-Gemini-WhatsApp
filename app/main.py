@@ -187,26 +187,39 @@ def oportunidad():
 @app.post("/webhook")
 async def webhook(request: Request):
 
+    from twilio.twiml.messaging_response import MessagingResponse
+
     form = await request.form()
 
     mensaje = form.get("Body")
 
 
     if not mensaje:
+
         respuesta = "No recibí ningún tema."
 
     else:
 
         tema = mensaje.lower()
 
-        videos = buscar_videos(tema)
+        try:
 
-        analisis = analizar_tendencias(videos)
+            videos = buscar_videos(
+                tema,
+                max_results=5
+            )
 
-        respuesta = analisis[:1500]
+            analisis = analizar_tendencias(videos)
+
+            respuesta = analisis[:1500]
 
 
-    from twilio.twiml.messaging_response import MessagingResponse
+        except Exception as e:
+
+            print("ERROR WEBHOOK:", e)
+
+            respuesta = f"Error procesando solicitud: {str(e)}"
+
 
 
     twilio_response = MessagingResponse()
