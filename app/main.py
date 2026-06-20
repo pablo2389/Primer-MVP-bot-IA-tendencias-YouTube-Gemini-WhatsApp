@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import Response
 
 from app.whatsapp import enviar_mensaje
 from app.youtube import buscar_videos
@@ -162,7 +163,6 @@ def oportunidad():
             )
 
 
-
     videos.sort(
         key=lambda x: x["score_viral"],
         reverse=True
@@ -179,3 +179,42 @@ def oportunidad():
         "videos": top,
         "analisis": analisis
     }
+
+
+
+# NUEVO WEBHOOK PARA TWILIO
+
+@app.post("/webhook")
+async def webhook(request: Request):
+
+    form = await request.form()
+
+    mensaje = form.get("Body")
+
+
+    if not mensaje:
+        respuesta = "No recibí ningún tema."
+
+    else:
+
+        tema = mensaje.lower()
+
+        videos = buscar_videos(tema)
+
+        analisis = analizar_tendencias(videos)
+
+        respuesta = analisis[:1500]
+
+
+    from twilio.twiml.messaging_response import MessagingResponse
+
+
+    twilio_response = MessagingResponse()
+
+    twilio_response.message(respuesta)
+
+
+    return Response(
+        content=str(twilio_response),
+        media_type="application/xml"
+    )
