@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 from fastapi import FastAPI, Form
 from fastapi.responses import Response
 from twilio.twiml.messaging_response import MessagingResponse
@@ -82,7 +83,6 @@ def oportunidad():
             videos.extend(buscar_videos(nicho, max_results=10))
         except Exception as e:
             print(f"Error en {nicho}: {e}")
-
     videos.sort(key=lambda x: x["score_viral"], reverse=True)
     top = videos[:20]
     analisis = analizar_tendencias(top)
@@ -92,16 +92,18 @@ def oportunidad():
 @app.post("/webhook")
 async def webhook(Body: str = Form(default=""), From: str = Form(default="")):
     mensaje = Body.strip()
-    print(f"📩 Mensaje de {From}: {mensaje}")
+    numero = From.strip()
+    print(f"📩 Mensaje de {numero}: {mensaje}")
 
     async def procesar_y_enviar():
         await asyncio.sleep(0.1)
         try:
             respuesta = procesar_mensaje(mensaje)
+            print(f"✅ Respuesta generada: {respuesta[:100]}")
+            resultado = enviar_mensaje(respuesta)
+            print(f"📤 CallMeBot: {resultado}")
         except Exception as e:
-            print(f"❌ Error: {str(e)}")
-            respuesta = f"❌ Error: {str(e)}"
-        enviar_mensaje(respuesta)
+            print(f"❌ ERROR COMPLETO: {traceback.format_exc()}")
 
     asyncio.create_task(procesar_y_enviar())
 
