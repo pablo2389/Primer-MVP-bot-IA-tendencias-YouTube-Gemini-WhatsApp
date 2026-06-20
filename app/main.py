@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Request, Form
+import asyncio
+from fastapi import FastAPI, Form
 from fastapi.responses import Response
 from twilio.twiml.messaging_response import MessagingResponse
 
@@ -56,14 +57,9 @@ def whatsapp_viral(tema: str = "seo"):
 @app.get("/descubrir")
 def descubrir():
     nichos = [
-        "google business",
-        "seo local",
-        "chatgpt",
-        "inteligencia artificial",
-        "wordpress",
-        "react",
-        "marketing digital",
-        "youtube shorts",
+        "google business", "seo local", "chatgpt",
+        "inteligencia artificial", "wordpress", "react",
+        "marketing digital", "youtube shorts",
     ]
     resultado = {}
     for nicho in nichos:
@@ -78,14 +74,8 @@ def descubrir():
 @app.get("/oportunidad")
 def oportunidad():
     videos = []
-    nichos = [
-        "google business",
-        "seo local",
-        "chatgpt",
-        "inteligencia artificial",
-        "wordpress",
-        "react",
-    ]
+    nichos = ["google business", "seo local", "chatgpt",
+              "inteligencia artificial", "wordpress", "react"]
     for nicho in nichos:
         try:
             videos.extend(buscar_videos(nicho, max_results=10))
@@ -103,15 +93,20 @@ async def webhook(Body: str = Form(default=""), From: str = Form(default="")):
     mensaje = Body.strip()
     print(f"📩 Mensaje de {From}: {mensaje}")
 
-    try:
-        tema = mensaje if len(mensaje) > 3 else "inteligencia artificial"
-        videos = buscar_videos(tema)
-        analisis = analizar_tendencias(videos)
-        respuesta = analisis[:1500] if len(analisis) > 1500 else analisis
-    except Exception as e:
-        print(f"❌ Error: {str(e)}")
-        respuesta = f"❌ Error: {str(e)}"
+    async def procesar_y_enviar():
+        await asyncio.sleep(0.1)
+        try:
+            tema = mensaje if len(mensaje) > 3 else "inteligencia artificial"
+            videos = buscar_videos(tema)
+            analisis = analizar_tendencias(videos)
+            respuesta = analisis[:1500] if len(analisis) > 1500 else analisis
+        except Exception as e:
+            print(f"❌ Error: {str(e)}")
+            respuesta = f"❌ Error: {str(e)}"
+        enviar_mensaje(respuesta)
+
+    asyncio.create_task(procesar_y_enviar())
 
     resp_twiml = MessagingResponse()
-    resp_twiml.message(respuesta)
+    resp_twiml.message("⏳ Analizando tendencias, en segundos te respondo...")
     return Response(content=str(resp_twiml), media_type="text/xml")
