@@ -4,3 +4,4 @@ python-dotenv
 requests
 google-api-python-client
 google-genai
+python-multipart
