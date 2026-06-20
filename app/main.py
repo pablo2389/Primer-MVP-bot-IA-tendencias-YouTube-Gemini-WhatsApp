@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Form
 from fastapi.responses import Response
 
 from app.whatsapp import enviar_mensaje
@@ -11,85 +11,49 @@ app = FastAPI()
 
 @app.get("/")
 def inicio():
-    return {
-        "mensaje": "Bot IA WhatsApp funcionando 🚀"
-    }
+    return {"mensaje": "Bot IA WhatsApp funcionando 🚀"}
 
 
 @app.get("/test-whatsapp")
 def test_whatsapp():
-
-    resultado = enviar_mensaje(
-        "🤖 Bot conectado correctamente desde Python"
-    )
-
-    return {
-        "respuesta": resultado
-    }
+    resultado = enviar_mensaje("🤖 Bot conectado correctamente desde Python")
+    return {"respuesta": resultado}
 
 
 @app.get("/trending")
 def trending(tema: str = "seo"):
-
     videos = buscar_videos(tema)
-
-    return {
-        "tema": tema,
-        "videos": videos
-    }
+    return {"tema": tema, "videos": videos}
 
 
 @app.get("/ideas")
 def ideas(tema: str = "seo"):
-
     videos = buscar_videos(tema)
-
     analisis = analizar_tendencias(videos)
-
-    return {
-        "tema": tema,
-        "analisis": analisis
-    }
+    return {"tema": tema, "analisis": analisis}
 
 
 @app.get("/viral")
 def viral(tema: str = "seo"):
-
     videos = buscar_videos(tema)
-
     analisis = analizar_tendencias(videos)
-
-    return {
-        "tema": tema,
-        "resultado": analisis
-    }
+    return {"tema": tema, "resultado": analisis}
 
 
 @app.get("/whatsapp-viral")
 def whatsapp_viral(tema: str = "seo"):
-
     videos = buscar_videos(tema)
-
     analisis = analizar_tendencias(videos)
-
     try:
         enviar_mensaje(analisis)
         whatsapp = "enviado correctamente"
-
     except Exception as e:
         whatsapp = f"error whatsapp: {str(e)}"
-
-
-    return {
-        "ok": True,
-        "tema": tema,
-        "whatsapp": whatsapp
-    }
+    return {"ok": True, "tema": tema, "whatsapp": whatsapp}
 
 
 @app.get("/descubrir")
 def descubrir():
-
     nichos = [
         "google business",
         "seo local",
@@ -98,100 +62,54 @@ def descubrir():
         "wordpress",
         "react",
         "marketing digital",
-        "youtube shorts"
+        "youtube shorts",
     ]
-
-
     resultado = {}
-
-
     for nicho in nichos:
-
         try:
-
-            videos = buscar_videos(
-                nicho,
-                max_results=30
-            )
-
+            videos = buscar_videos(nicho, max_results=30)
             resultado[nicho] = videos[:5]
-
-
         except Exception as e:
-
-            resultado[nicho] = {
-                "error": str(e)
-            }
-
-
+            resultado[nicho] = {"error": str(e)}
     return resultado
-
 
 
 @app.get("/oportunidad")
 def oportunidad():
-
     videos = []
-
-
     nichos = [
         "google business",
         "seo local",
         "chatgpt",
         "inteligencia artificial",
         "wordpress",
-        "react"
+        "react",
     ]
-
-
     for nicho in nichos:
-
         try:
-
-            videos.extend(
-                buscar_videos(
-                    nicho,
-                    max_results=10
-                )
-            )
-
-
+            videos.extend(buscar_videos(nicho, max_results=10))
         except Exception as e:
+            print(f"Error en {nicho}: {e}")
 
-            print(
-                f"Error en {nicho}: {e}"
-            )
-
-
-    videos.sort(
-        key=lambda x: x["score_viral"],
-        reverse=True
-    )
-
-
+    videos.sort(key=lambda x: x["score_viral"], reverse=True)
     top = videos[:20]
-
-
     analisis = analizar_tendencias(top)
+    return {"videos": top, "analisis": analisis}
 
 
-    return {
-        "videos": top,
-        "analisis": analisis
-    }
+@app.post("/webhook")
+async def webhook(Body: str = Form(default=""), From: str = Form(default="")):
+    mensaje = Body.strip()
+    print(f"📩 Mensaje de {From}: {mensaje}")
 
+    try:
+        tema = mensaje if len(mensaje) > 3 else "inteligencia artificial"
+        videos = buscar_videos(tema)
+        analisis = analizar_tendencias(videos)
+        respuesta = analisis[:1500] if len(analisis) > 1500 else analisis
+    except Exception as e:
+        respuesta = f"❌ Error: {str(e)}"
 
-
-# NUEVO WEBHOOK PARA TWILIO@app.post("/webhook")
-async def webhook(request: Request):
-
-    from twilio.twiml.messaging_response import MessagingResponse
-
-    response = MessagingResponse()
-
-    response.message("🤖 Hola! Tu bot WhatsApp funciona correctamente 🚀")
-
-    return Response(
-        content=str(response),
-        media_type="text/xml"
-    )
+    resp_twiml = __import__("twilio.twiml.messaging_response", fromlist=["MessagingResponse"]).MessagingResponse()
+    resp_twiml.message(respuesta)
+    return Response(content=str(resp_twiml), media_type="text/xml")
