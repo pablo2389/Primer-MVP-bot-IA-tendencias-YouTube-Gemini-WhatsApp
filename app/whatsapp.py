@@ -1,64 +1,25 @@
 import os
-import requests
-
+from twilio.rest import Client
 from dotenv import load_dotenv
-
 
 load_dotenv()
 
+ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+FROM_NUMBER = os.getenv("TWILIO_FROM")  # ej: +14155238886
+TO_NUMBER = os.getenv("CALLMEBOT_PHONE")  # tu número destino, ya lo tenés cargado
 
 
-CALLMEBOT_PHONE = os.getenv(
-    "CALLMEBOT_PHONE"
-)
-
-CALLMEBOT_APIKEY = os.getenv(
-    "CALLMEBOT_APIKEY"
-)
-
-
-
-if not CALLMEBOT_PHONE or not CALLMEBOT_APIKEY:
-    raise Exception(
-        "Faltan variables CALLMEBOT_PHONE o CALLMEBOT_APIKEY en .env"
-    )
-
-
-
-def enviar_mensaje(texto):
-
-    url = "https://api.callmebot.com/whatsapp.php"
-
-
-    params = {
-        "phone": CALLMEBOT_PHONE,
-        "text": texto,
-        "apikey": CALLMEBOT_APIKEY
-    }
-
-
+def enviar_mensaje(texto: str) -> dict:
     try:
-
-        respuesta = requests.get(
-            url,
-            params=params,
-            timeout=10
+        client = Client(ACCOUNT_SID, AUTH_TOKEN)
+        message = client.messages.create(
+            from_=f"whatsapp:{FROM_NUMBER}",
+            to=f"whatsapp:{TO_NUMBER}",
+            body=texto
         )
-
-
-        respuesta.raise_for_status()
-
-
-        return {
-            "estado": "enviado",
-            "respuesta": respuesta.text
-        }
-
-
-
-    except requests.exceptions.RequestException as e:
-
-        return {
-            "estado": "error",
-            "mensaje": str(e)
-        }
+        print(f"📤 Twilio SID: {message.sid}")
+        return {"estado": "enviado", "sid": message.sid}
+    except Exception as e:
+        print(f"❌ Twilio error: {e}")
+        return {"estado": "error", "mensaje": str(e)}
