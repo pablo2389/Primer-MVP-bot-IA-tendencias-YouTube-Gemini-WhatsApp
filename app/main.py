@@ -90,23 +90,23 @@ def oportunidad():
 
 
 @app.post("/webhook")
+
+
+@app.post("/webhook")
 async def webhook(Body: str = Form(default=""), From: str = Form(default="")):
+    import traceback
     mensaje = Body.strip()
     numero = From.strip()
     print(f"📩 Mensaje de {numero}: {mensaje}")
 
-    async def procesar_y_enviar():
-        await asyncio.sleep(0.1)
-        try:
-            respuesta = procesar_mensaje(mensaje)
-            print(f"✅ Respuesta generada: {respuesta[:100]}")
-            resultado = enviar_mensaje(respuesta)
-            print(f"📤 CallMeBot: {resultado}")
-        except Exception as e:
-            print(f"❌ ERROR COMPLETO: {traceback.format_exc()}")
-
-    asyncio.create_task(procesar_y_enviar())
+    try:
+        respuesta = procesar_mensaje(mensaje)
+        print(f"✅ Respuesta: {respuesta[:100]}")
+        resultado = enviar_mensaje(respuesta)
+        print(f"📤 CallMeBot: {resultado}")
+    except Exception as e:
+        print(f"❌ ERROR: {traceback.format_exc()}")
 
     resp_twiml = MessagingResponse()
-    resp_twiml.message("⏳ Procesando tu consulta...")
+    resp_twiml.message("✅ Listo, revisá tu WhatsApp")
     return Response(content=str(resp_twiml), media_type="text/xml")
