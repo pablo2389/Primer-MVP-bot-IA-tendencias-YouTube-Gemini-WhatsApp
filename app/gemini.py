@@ -22,7 +22,6 @@ def analizar_tendencias(videos):
     if not videos:
         return "No hay suficientes datos para analizar."
 
-    # Top 3 más virales
     top = videos[:3]
 
     datos = "\n".join([
@@ -107,3 +106,30 @@ Mensaje del usuario: {mensaje}
 
     except Exception as e:
         return f"❌ Error: {str(e)}"
+
+
+def generar_ideas_posts(tema: str) -> str:
+
+    prompt = f"""
+Generá 5 ideas de posts para Instagram y TikTok sobre el tema: {tema}
+
+Para cada idea incluí:
+- Formato (Reel, Carrusel, Story, TikTok)
+- Título gancho (menos de 10 palabras)
+- Una línea de descripción
+
+Sé concreto, creativo y orientado a engagement.
+Respondé en español, formato limpio para WhatsApp con emojis.
+Sin markdown complejo, solo texto y emojis.
+"""
+
+    try:
+        respuesta = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        texto = respuesta.text
+        return texto[:1500] if len(texto) > 1500 else texto
+
+    except Exception as e:
+        return f"❌ Error generando ideas: {str(e)}"

@@ -269,3 +269,59 @@ def buscar_videos(query, max_results=20):
 
 
     return resultados
+
+
+
+
+def buscar_canal(nombre_canal: str, max_results=5):
+    youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
+
+    # Primero busca el canal
+    canal_response = youtube.search().list(
+        q=nombre_canal,
+        part="snippet",
+        type="channel",
+        maxResults=1
+    ).execute()
+
+    items = canal_response.get("items", [])
+    if not items:
+        return []
+
+    channel_id = items[0]["id"]["channelId"]
+
+    # Busca los videos más recientes del canal
+    search_response = youtube.search().list(
+        channelId=channel_id,
+        part="snippet",
+        type="video",
+        maxResults=max_results,
+        order="viewCount"
+    ).execute()
+
+    ids = [item["id"]["videoId"] for item in search_response.get("items", [])]
+    if not ids:
+        return []
+
+    stats_response = youtube.videos().list(
+        part="snippet,statistics",
+        id=",".join(ids)
+    ).execute()
+
+    resultados = []
+    for video in stats_response.get("items", []):
+        stats = video.get("statistics", {})
+        snippet = video.get("snippet", {})
+        resultados.append({
+            "id": video.get("id"),
+            "titulo": snippet.get("title"),
+            "canal": snippet.get("channelTitle"),
+            "url": f"https://youtube.com/watch?v={video.get('id')}",
+            "vistas": int(stats.get("viewCount", 0)),
+            "likes": int(stats.get("likeCount", 0)),
+            "comentarios": int(stats.get("commentCount", 0)),
+            "fecha": snippet.get("publishedAt"),
+        })
+
+    resultados.sort(key=lambda x: x["vistas"], reverse=True)
+    return resultados
