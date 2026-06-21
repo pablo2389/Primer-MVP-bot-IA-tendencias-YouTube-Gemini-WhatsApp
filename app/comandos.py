@@ -63,27 +63,45 @@ def procesar_mensaje(mensaje: str) -> str:
         partes = texto.split(" ", 1)
         nombre = partes[1].strip() if len(partes) > 1 else ""
         if not nombre:
-            return "⚠️ Escribí el nombre del canal. Ej: *canal MrBeast*"
+            return "⚠️ Escribí el nombre del canal. Ej: canal MrBeast"
         return analizar_canal(nombre)
 
     if lower.startswith("imagen"):
         partes = texto.split(" ", 1)
         descripcion = partes[1].strip() if len(partes) > 1 else ""
         if not descripcion:
-            return "⚠️ Describí la imagen. Ej: *imagen perro con camiseta de Boca*"
+            return "⚠️ Describí la imagen. Ej: imagen perro con camiseta de Boca"
         return procesar_imagen(descripcion)
 
     if lower.startswith("buscar"):
         partes = texto.split(" ", 1)
         pregunta = partes[1].strip() if len(partes) > 1 else ""
-        if not pregunta:
-            return "⚠️ Escribí qué querés buscar. Ej: *buscar edad de Messi*"
         return busqueda_web(pregunta)
 
-    if "?" in texto:
+    # Detecta intención con palabras clave
+    palabras_youtube = ["viral", "virales", "youtube", "videos", "trending", "tendencia"]
+    palabras_buscar = ["quién", "quien", "cuándo", "cuando", "dónde", "donde",
+                       "cuánto", "cuanto", "cómo", "como", "qué", "que es",
+                       "edad", "nació", "nacio", "año", "historia", "noticia"]
+
+    if any(p in lower for p in palabras_youtube):
+        tema = extraer_tema(texto)
+        return buscar_y_analizar(tema)
+
+    if any(p in lower for p in palabras_buscar) or "?" in texto:
         return busqueda_web(texto)
 
+    # Fallback: busca en YouTube directamente
     return buscar_y_analizar(texto)
+
+
+def extraer_tema(mensaje: str) -> str:
+    try:
+        prompt = f"Extraé solo el tema principal de esta frase en 1-3 palabras, sin explicación: '{mensaje}'"
+        tema = respuesta_general(prompt).strip().lower()
+        return tema[:50]
+    except:
+        return mensaje
 
 
 def buscar_y_analizar(tema: str) -> str:
