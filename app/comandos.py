@@ -1,5 +1,11 @@
 from app.youtube import buscar_videos, buscar_canal
-from app.gemini import respuesta_general, generar_ideas_posts
+from app.gemini import (
+    respuesta_general,
+    busqueda_web,
+    generar_imagen,
+    generar_ideas_posts,
+)
+from app.whatsapp import enviar_imagen
 
 MENU = """
 🤖 *Bot IA - Tu asistente de contenido*
@@ -18,8 +24,14 @@ Ej: ideas restaurante vegano
 📺 *canal [nombre]*
 Ej: canal MrBeast
 
+🖼️ *imagen [descripción]*
+Ej: imagen perro con camiseta de Boca
+
+🌐 *buscar [pregunta]*
+Ej: buscar edad de Messi
+
 💬 *cualquier pregunta con ?*
-Ej: cómo mejorar mi perfil de Google Business
+Ej: cómo mejorar mi perfil de Google?
 
 📋 *ayuda* - muestra este menú
 """.strip()
@@ -45,7 +57,7 @@ def procesar_mensaje(mensaje: str) -> str:
     if lower.startswith("ideas"):
         partes = texto.split(" ", 1)
         tema = partes[1].strip() if len(partes) > 1 else "marketing digital"
-        return ideas_posts(tema)
+        return generar_ideas_posts(tema)
 
     if lower.startswith("canal"):
         partes = texto.split(" ", 1)
@@ -54,13 +66,25 @@ def procesar_mensaje(mensaje: str) -> str:
             return "⚠️ Escribí el nombre del canal. Ej: *canal MrBeast*"
         return analizar_canal(nombre)
 
+    if lower.startswith("imagen"):
+        partes = texto.split(" ", 1)
+        descripcion = partes[1].strip() if len(partes) > 1 else ""
+        if not descripcion:
+            return "⚠️ Describí la imagen. Ej: *imagen perro con camiseta de Boca*"
+        return procesar_imagen(descripcion)
+
+    if lower.startswith("buscar"):
+        partes = texto.split(" ", 1)
+        pregunta = partes[1].strip() if len(partes) > 1 else ""
+        if not pregunta:
+            return "⚠️ Escribí qué querés buscar. Ej: *buscar edad de Messi*"
+        return busqueda_web(pregunta)
+
     if "?" in texto:
-        return respuesta_general(texto)
+        return busqueda_web(texto)
 
     return buscar_y_analizar(texto)
 
-
-# ── Tendencias ────────────────────────────────────────────
 
 def buscar_y_analizar(tema: str) -> str:
     try:
@@ -84,8 +108,6 @@ def formatear_videos_corto(videos: list, tema: str) -> str:
     return "\n".join(lineas)
 
 
-# ── Guion ─────────────────────────────────────────────────
-
 def generar_guion(tema: str) -> str:
     try:
         from app.gemini import analizar_tendencias
@@ -101,24 +123,11 @@ def generar_guion(tema: str) -> str:
         return f"❌ Error generando guion: {str(e)}"
 
 
-# ── Ideas Instagram/TikTok ────────────────────────────────
-
-def ideas_posts(tema: str) -> str:
-    try:
-        ideas = generar_ideas_posts(tema)
-        return ideas
-    except Exception as e:
-        return f"❌ Error generando ideas: {str(e)}"
-
-
-# ── Análisis de canal ─────────────────────────────────────
-
 def analizar_canal(nombre: str) -> str:
     try:
         videos = buscar_canal(nombre)
         if not videos:
             return f"⚠️ No encontré el canal *{nombre}*."
-
         lineas = [f"📺 *Canal — {nombre.upper()}*\n"]
         for i, v in enumerate(videos[:5], 1):
             fecha = v["fecha"][:10]
@@ -130,3 +139,16 @@ def analizar_canal(nombre: str) -> str:
         return "\n".join(lineas)
     except Exception as e:
         return f"❌ Error analizando canal: {str(e)}"
+
+
+def procesar_imagen(descripcion: str) -> str:
+    try:
+        imagen_bytes = generar_imagen(descripcion)
+        if not imagen_bytes:
+            return "❌ No se pudo generar la imagen. Intentá con otra descripción."
+        resultado = enviar_imagen(imagen_bytes, caption=f"🖼️ {descripcion}")
+        if resultado["estado"] == "enviado":
+            return "🖼️ Imagen generada y enviada a tu WhatsApp."
+        return f"❌ Error enviando imagen: {resultado.get('mensaje')}"
+    except Exception as e:
+        return f"❌ Error: {str(e)}"
